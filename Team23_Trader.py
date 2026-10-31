@@ -1,9 +1,10 @@
 """QuantiFi 2026 team 23 trading algorithm.
 
-Experimental v3 based on the original profitable baseline.
+v7 controlled hybrid based on v5/v6 comparative backtests.
 
-Retains the original pricing for strong products; tests reducing exposure to
-historically weak products. Results require an official QuantiFi backtest.
+keeps the validated ema and option strategies intact. the new fruit and pearl
+models are disabled by default except for a separately tested, small pink-pearl
+signal. all performance estimates require an official quantifi backtest.
 """
 
 import json
@@ -84,6 +85,12 @@ class Trader:
     # v6: weak strikes remain available through conservative passive quoting
     PASSIVE_WINGS = {6800, 8100}
     WING_QUOTE_MULTIPLIER = 2.0
+    # cross-asset models are individually gated following the v6 ablation
+    # the basket and most pearl signals reduced training pnl and stay disabled
+    ENABLE_BASKET_SIGNAL = False
+    ENABLE_PEARL_SIGNALS = False
+    ENABLE_PINK_PEARL_SIGNAL = True
+
     # v6: basket lead/lag signal and pearl common-factor residuals are capped
     BASKET_WEIGHTS = {"DRAGONFRUIT": 1.795, "GRANADILLA": 2.592, "MANGOSTEEN": 0.927}
     BASKET_ALPHA = 0.25
@@ -268,7 +275,7 @@ class Trader:
         fairs = {}
 
         # predict a limited basket adjustment from contemporaneous fruit moves
-        if "FRUIT_BASKET" in mids and all(k in changes for k in self.BASKET_WEIGHTS):
+        if self.ENABLE_BASKET_SIGNAL and "FRUIT_BASKET" in mids and all(k in changes for k in self.BASKET_WEIGHTS):
             fruit_move = sum(self.BASKET_WEIGHTS[k] * changes[k] for k in self.BASKET_WEIGHTS)
             basket_move = changes.get("FRUIT_BASKET", 0.0)
             innovation = fruit_move - basket_move
@@ -279,9 +286,11 @@ class Trader:
 
         # market-neutral pearl residual: compare each pearl's percentage move
         # to the median percentage move of the other pearls
-        if all(p in mids and p in previous and float(previous[p]) > 0 for p in self.PEARLS):
+        if (self.ENABLE_PEARL_SIGNALS or self.ENABLE_PINK_PEARL_SIGNAL) and all(p in mids and p in previous and float(previous[p]) > 0 for p in self.PEARLS):
             returns = {p: changes[p] / float(previous[p]) for p in self.PEARLS}
             for p in self.PEARLS:
+                if not self.ENABLE_PEARL_SIGNALS and p != "PINK_PEARLS":
+                    continue
                 others = sorted(returns[q] for q in self.PEARLS if q != p)
                 peer_return = 0.5 * (others[1] + others[2])
                 relative_move = mids[p] * (peer_return - returns[p])
@@ -506,7 +515,14 @@ class Trader:
             mid = (best_bid + best_ask) / 2.0
             fair = self._update_fair_value(symbol, mid, memory)
             modeled_fair = symbol == "AMETHYST"
-            if symbol in cross_fairs and symbol not in ("PAPER_LANTERNS", "TOFFEE_CAKE"):
+            # only enable signals with a positive controlled test result
+            # pink pearls improved slightly in v6; all other additions hurt
+            apply_cross = (
+                (symbol == "FRUIT_BASKET" and self.ENABLE_BASKET_SIGNAL)
+                or (symbol == "PINK_PEARLS" and self.ENABLE_PINK_PEARL_SIGNAL)
+                or (symbol in self.PEARLS and self.ENABLE_PEARL_SIGNALS)
+            )
+            if apply_cross and symbol in cross_fairs:
                 fair = cross_fairs[symbol]
                 modeled_fair = True
             if symbol in option_fairs:
