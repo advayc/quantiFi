@@ -1,9 +1,9 @@
 """QuantiFi 2026 team 23 trading algorithm.
 
-The trader uses a fixed-value anchor for AMETHYST, trend and reversion signals
-for two products, a cross-strike option valuation for LYCHEE calls, and
-conservative two-sided market making for the remaining products. All positions
-are kept inside the competition's published limits.
+The trader combines fixed-value anchoring, adaptive fast/slow EMA signals,
+cross-strike Black-Scholes valuation for LYCHEE vouchers, and inventory-aware
+market making. It crosses the spread only when modeled edge covers execution
+costs, while keeping all positions inside the published limits.
 """
 
 import json
@@ -66,31 +66,50 @@ class Trader:
     # EMA parameters are in ticks. PAPER_LANTERNS' price deviation from a
     # 100-tick average predicted continuation in all three training days.
     EMA_ALPHA = 2.0 / 101.0
+    FAST_EMA_ALPHA = 2.0 / 21.0
     PAPER_MOMENTUM = 0.50
     TOFFEE_MEAN_REVERSION = 0.20
+    GENERAL_MOMENTUM = 0.30
+    MAX_SIGNAL_MOVE = 2.0
 
     DEFAULT_ORDER_SIZE = 2
     VOUCHER_ORDER_SIZE = 1
-    MIN_TAKE_EDGE = 1.5
-    OPTION_TAKE_EDGE = 6.0
+    MIN_TAKE_EDGE = 0.5
+    OPTION_TAKE_EDGE = 1.0
     MAX_TOTAL_VOL = 0.20
     MIN_TOTAL_VOL = 0.005
 
     @staticmethod
     def _load_memory(raw: str) -> dict:
         if not raw:
-            return {"version": 1, "last_timestamp": None, "ema": {}, "count": {}}
+            return {
+                "version": 2,
+                "last_timestamp": None,
+                "ema": {},
+                "fast_ema": {},
+                "count": {},
+            }
         try:
             memory = json.loads(raw)
-            if not isinstance(memory, dict) or memory.get("version") != 1:
+            if not isinstance(memory, dict) or memory.get("version") not in (1, 2):
                 raise ValueError("unsupported traderData")
             if not isinstance(memory.get("ema"), dict) or not isinstance(
                 memory.get("count"), dict
             ):
                 raise ValueError("invalid traderData")
+            if not isinstance(memory.get("fast_ema", {}), dict):
+                raise ValueError("invalid traderData")
+            memory["version"] = 2
+            memory.setdefault("fast_ema", {})
             return memory
         except (TypeError, ValueError, json.JSONDecodeError):
-            return {"version": 1, "last_timestamp": None, "ema": {}, "count": {}}
+            return {
+                "version": 2,
+                "last_timestamp": None,
+                "ema": {},
+                "fast_ema": {},
+                "count": {},
+            }
 
     @staticmethod
     def _best_prices(book: OrderDepth) -> Tuple[int, int]:
@@ -195,6 +214,12 @@ class Trader:
                 nearest = sorted(peers, key=lambda node: abs(node[0] - x))[:2]
                 nearest.sort(key=lambda node: node[0])
                 (x1, _, v1), (x2, _, v2) = nearest
+            elif peers:
+                # One reliable node is still preferable to abandoning the
+                # whole voucher chain. Use its volatility as a flat smile.
+                total_vol = peers[0][2]
+                fairs[symbol] = self._call_price(spot, strike, total_vol)
+                continue
             else:
                 continue
 
@@ -229,6 +254,7 @@ class Trader:
             fair = mid
 
         previous_ema = memory["ema"].get(symbol)
+        previous_fast_ema = memory["fast_ema"].get(symbol)
         count = int(memory["count"].get(symbol, 0))
         if previous_ema is None:
             ema = mid
@@ -236,16 +262,32 @@ class Trader:
         else:
             ema = self.EMA_ALPHA * mid + (1.0 - self.EMA_ALPHA) * float(previous_ema)
             count += 1
+        if previous_fast_ema is None:
+            fast_ema = mid
+        else:
+            fast_ema = self.FAST_EMA_ALPHA * mid + (
+                1.0 - self.FAST_EMA_ALPHA
+            ) * float(previous_fast_ema)
 
         memory["ema"][symbol] = ema
+        memory["fast_ema"][symbol] = fast_ema
         memory["count"][symbol] = count
 
         deviation = mid - ema
+        trend = fast_ema - ema
         warmup = min(1.0, count / 100.0)
         if symbol == "PAPER_LANTERNS":
             fair += self.PAPER_MOMENTUM * deviation * warmup
         elif symbol == "TOFFEE_CAKE":
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
+        elif symbol != "AMETHYST":
+            # A bounded fast/slow EMA spread supplies a small directional
+            # bias without allowing one stale tick to move fair value far
+            # outside the executable market.
+            fair += max(
+                -self.MAX_SIGNAL_MOVE,
+                min(self.MAX_SIGNAL_MOVE, self.GENERAL_MOMENTUM * trend),
+            ) * warmup
 
         return fair
 
@@ -284,13 +326,13 @@ class Trader:
         buy_capacity = max(0, risk_limit - position)
         sell_capacity = max(0, risk_limit + position)
 
-        # Take only when the visible price is clearly favorable to the fair
-        # value estimate. For ordinary mid-based products this rarely fires;
-        # it is useful for the AMETHYST anchor and the two signal products.
+        # Cross only when the modeled edge covers a small execution buffer.
+        # The buffer is deliberately below a full spread: a directional fair
+        # value should be able to consume stale top-of-book liquidity.
         if self._option_strike(symbol) is not None and modeled_fair:
             take_edge = max(self.OPTION_TAKE_EDGE, spread * 0.75)
         else:
-            take_edge = max(self.MIN_TAKE_EDGE, spread * 0.50)
+            take_edge = max(self.MIN_TAKE_EDGE, spread * 0.25)
         if book.sell_orders and best_ask <= fair - take_edge and buy_capacity:
             quantity = min(buy_capacity, ask_volume, self._order_size(symbol))
             if quantity > 0:
@@ -321,8 +363,8 @@ class Trader:
             buy_size = sell_size = base_size
 
         # Keep at least a small positive edge to the unskewed fair value.
-        # Inventory skew may bring a quote inside the spread, but not through
-        # fair value in a way that would knowingly lock in a loss.
+        # Inventory skew may improve a quote inside the spread, but never
+        # crosses fair value and knowingly locks in a loss.
         if buy_capacity > 0:
             bid_price = min(bid_price, math.floor(fair - 0.5))
             quantity = min(buy_capacity, buy_size)
@@ -346,6 +388,7 @@ class Trader:
         previous_timestamp = memory.get("last_timestamp")
         if previous_timestamp is not None and timestamp < int(previous_timestamp):
             memory["ema"] = {}
+            memory["fast_ema"] = {}
             memory["count"] = {}
 
         option_fairs = self._option_fair_values(state.order_depths)
