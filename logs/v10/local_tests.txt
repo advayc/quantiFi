@@ -1,0 +1,3 @@
+V10A_RiskFixed.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V10B_JellyExit.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V10C_Breadth.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides

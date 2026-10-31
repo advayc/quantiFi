@@ -1,17 +1,13 @@
 # QuantiFi Competition Team 23
 
-This is a an implmentation of an inventory-aware multi-product trading model that combines fair-value estimation, EMA momentum/reversion signals, option pricing, and relative-value
-trading. It takes liquidity only when the estimated edge covers execution risk
-and keeps positions within product limits.
+The active algorithm is **Team23_Trader.py (V10)**. Earlier versions are archived under logs; only this root trader file should be used for the next backtest.
 
-- **Core signals:** fixed-value AMETHYST pricing, adaptive EMA signals, and a
-  fruit-basket/component relationship.
-- **Options:** Black-Scholes voucher pricing with conservative wing handling.
-- **Risk:** inventory skew, volatility-aware thresholds, position limits, and
-  persistent state between ticks.
+V10 combines fixed-value AMETHYST pricing, PAPER_LANTERNS momentum, TOFFEE_CAKE mean reversion, bounded trend/imbalance quotes, peer-relative PINK_PEARLS pricing, and call valuation from neighboring implied total volatilities. Basket cross-signals are disabled. Persistent memory travels in traderData.
 
-## Backtest diagrams
+Risk controls include product inventory targets, separate reservations for potential buy and sell fills, an estimated aggregate delta budget, and JELLY entry filters that still allow inventory reductions. These controls cannot guarantee future profitability.
 
-![P&L](logs/v3/pnl.png)
+The selected capacity candidate returned **119,985 PnL**, traded **26/26 products**, and had **4,491.5 maximum drawdown** on the three supplied days. These are development results on reused training data.
 
-![Position](logs/v3/position.png)
+See [V10 comparison and limitations](logs/v10/RESULTS.md), [machine-readable comparison](logs/v10/comparison.csv), and the official logs in [logs/v10](logs/v10).
+
+Reproduce the summaries with `python3 analysis/analyze_v10.py logs/v10/V10D_Capacity.log`; run risk checks with `python3 analysis/test_v10.py Team23_Trader.py`.

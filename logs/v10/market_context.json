@@ -1,0 +1,32 @@
+{
+  "BLACK_PEARLS": {
+    "n": 30000,
+    "minimum_mid": 11749.5,
+    "maximum_mid": 12299.0,
+    "average_spread": 8.0075
+  },
+  "JELLY": {
+    "n": 30000,
+    "minimum_mid": 1695.0,
+    "maximum_mid": 2212.5,
+    "average_spread": 11.0136
+  },
+  "PEANUT_BUTTER": {
+    "n": 30000,
+    "minimum_mid": 2976.0,
+    "maximum_mid": 3739.5,
+    "average_spread": 6.002033333333333
+  },
+  "VOUCHER_6800": {
+    "n": 30000,
+    "minimum_mid": 531.0,
+    "maximum_mid": 752.0,
+    "average_spread": 5.999233333333334
+  },
+  "VOUCHER_8100": {
+    "n": 30000,
+    "minimum_mid": 2.5,
+    "maximum_mid": 43.5,
+    "average_spread": 3.0
+  }
+}

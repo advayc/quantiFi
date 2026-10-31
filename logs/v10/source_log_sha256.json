@@ -1,0 +1,12 @@
+{
+  "Team23_Trader.py": "f806cd075cbb82f61f294c8590dd791673e7f2c58ea5312474e374883fb5850e",
+  "logs/v10/candidates/V10A_RiskFixed.py": "72fb7af39d7a72918f702c8b793978fad4b87eb766c8b70d084619e46f6b8c34",
+  "logs/v10/candidates/V10B_JellyExit.py": "1ede317193e0f7cdebefe7e78a108da411031cfee7e8785f23838c5415204106",
+  "logs/v10/candidates/V10C_Breadth.py": "5841800ec4b552470b8eb9b3dce01555cc411277145eb95085ab94f82efd1ad3",
+  "logs/v10/candidates/V10D_Capacity.py": "492731d7a795e7dae1dd9f1f5ab2f40430f9728c8eaa31d31df333f3b85d12b2",
+  "logs/v10/V10A_RiskFixed.log": "752c7af3b1af9b15cc47d13eaa09ab0787f4352a55fe520043c9cec24507eb64",
+  "logs/v10/V10B_JellyExit.log": "36f9821adb9f919d3c9975a4673649eb8424f64948c8ae7393d4183c9aadcab6",
+  "logs/v10/V10C_Breadth.log": "ae1374d386de50625cac33f66f1b50a9370639bacfd2f084e900aaa476784f66",
+  "logs/v10/V10D_Capacity.log": "c0c8aa4d4d32d65af7129ee3d9b401434646838c79603712bdde5b3ba0d712ac",
+  "logs/v10/Team23_Trader_V10.log": "c0c8aa4d4d32d65af7129ee3d9b401434646838c79603712bdde5b3ba0d712ac"
+}
