@@ -1,9 +1,7 @@
 """QuantiFi 2026 team 23 trading algorithm.
 
-Experimental v3 based on the original profitable baseline.
-
-Retains the original pricing for strong products; tests reducing exposure to
-historically weak products. Results require an official QuantiFi backtest.
+Multi-product market making with product-specific signals, voucher valuation,
+and inventory-aware execution.
 """
 
 import json
@@ -60,6 +58,17 @@ BASE_ORDER_SIZE: Dict[str, int] = {
 
 
 class Trader:
+    FUNDAMENTAL_PRODUCTS = {"AMETHYST"}
+    MOMENTUM_PRODUCTS = {"PAPER_LANTERNS"}
+    REVERSION_PRODUCTS = {"TOFFEE_CAKE"}
+    CAUTIOUS_PRODUCTS = {"JELLY", "PEANUT_BUTTER", "BLACK_PEARLS"}
+    RELATIVE_VALUE_PRODUCTS = {
+        "FRUIT_BASKET",
+        "DRAGONFRUIT",
+        "GRANADILLA",
+        "MANGOSTEEN",
+    }
+
     # This value is exact in all three supplied training files.
     AMETHYST_FAIR_VALUE = 10_000.0
 
@@ -71,18 +80,20 @@ class Trader:
     TOFFEE_MEAN_REVERSION = 0.20
     GENERAL_MOMENTUM = 0.30
     MAX_SIGNAL_MOVE = 2.0
-
     DEFAULT_ORDER_SIZE = 2
     VOUCHER_ORDER_SIZE = 1
     MIN_TAKE_EDGE = 0.5
     OPTION_TAKE_EDGE = 1.0
     MAX_TOTAL_VOL = 0.20
     MIN_TOTAL_VOL = 0.005
+    OPTION_DELTA_LIMIT = 30.0
+    DELTA_VOL = 0.10
 
-    # experimental controls: isolate historically weak products without
-    # changing the proven paper lanterns and toffee cake signals
-    DISABLED_STRIKES = {6800}
-    CAUTIOUS_PRODUCTS = {"JELLY", "PEANUT_BUTTER", "BLACK_PEARLS"}
+    # Weak option wings remain covered for breadth, but are passive-only:
+    # they cannot use an unsupported fair-value extrapolation or cross the
+    # spread into uncertain liquidity.
+    PASSIVE_ONLY_STRIKES = {6800, 8100}
+    PASSIVE_WING_SPREAD_MULTIPLIER = 2.0
     CAUTIOUS_SIZE = 1
     CAUTIOUS_HALF_SPREAD_MULTIPLIER = 1.5
 
@@ -180,8 +191,8 @@ class Trader:
 
         This uses the live option chain to infer the current volatility smile,
         so it does not need a day counter or a guessed expiry at OOS startup.
-        If the live chain has too few reliable peer strikes, the contract
-        falls back to ordinary order-book market making.
+        Wing contracts are not valued unless reliable strikes exist on both
+        sides; those contracts use no model-driven option signal.
         """
         underlying = books.get("LYCHEE")
         if underlying is None or not underlying.buy_orders or not underlying.sell_orders:
@@ -219,17 +230,8 @@ class Trader:
             if lower and upper:
                 x1, _, v1 = lower[-1]
                 x2, _, v2 = upper[0]
-            elif len(peers) >= 2:
-                nearest = sorted(peers, key=lambda node: abs(node[0] - x))[:2]
-                nearest.sort(key=lambda node: node[0])
-                (x1, _, v1), (x2, _, v2) = nearest
-            elif peers:
-                # One reliable node is still preferable to abandoning the
-                # whole voucher chain. Use its volatility as a flat smile.
-                total_vol = peers[0][2]
-                fairs[symbol] = self._call_price(spot, strike, total_vol)
-                continue
             else:
+                # Never extrapolate a volatility smile into an option wing.
                 continue
 
             if x2 == x1:
@@ -239,12 +241,41 @@ class Trader:
             fairs[symbol] = self._call_price(spot, strike, total_vol)
         return fairs
 
+    @classmethod
+    def _option_delta(cls, spot: float, strike: int) -> float:
+        if spot <= 0 or strike <= 0:
+            return 0.0
+        total_vol = cls.DELTA_VOL
+        d1 = (math.log(spot / strike) + 0.5 * total_vol * total_vol) / total_vol
+        return cls._normal_cdf(d1)
+
+    def _portfolio_delta(self, books: dict, positions: dict) -> float:
+        underlying = books.get("LYCHEE")
+        if underlying is None or not underlying.buy_orders or not underlying.sell_orders:
+            return 0.0
+        best_bid, best_ask = self._best_prices(underlying)
+        spot = (best_bid + best_ask) / 2.0
+        exposure = float(positions.get("LYCHEE", 0))
+        for symbol, position in positions.items():
+            strike = self._option_strike(symbol)
+            if strike is not None:
+                exposure += float(position) * self._option_delta(spot, strike)
+        return exposure
+
+    @staticmethod
+    def _delta_capacity(net_delta: float, delta: float, direction: int, limit: float) -> int:
+        if delta <= 0.0:
+            return 10**9
+        if direction > 0:
+            return max(0, math.floor((limit - net_delta) / delta))
+        return max(0, math.floor((net_delta + limit) / delta))
+
     @staticmethod
     def _risk_limit(symbol: str, hard_limit: int) -> int:
         """Use softer exposure targets to reduce adverse-selection losses."""
-        if symbol == "AMETHYST":
+        if symbol in Trader.FUNDAMENTAL_PRODUCTS:
             fraction = 1.0
-        elif symbol in ("PAPER_LANTERNS", "TOFFEE_CAKE"):
+        elif symbol in Trader.MOMENTUM_PRODUCTS | Trader.REVERSION_PRODUCTS:
             fraction = 0.75
         elif symbol == "TELLURIUM":
             fraction = 0.25
@@ -259,7 +290,7 @@ class Trader:
     def _update_fair_value(
         self, symbol: str, mid: float, memory: dict
     ) -> float:
-        if symbol == "AMETHYST":
+        if symbol in self.FUNDAMENTAL_PRODUCTS:
             fair = self.AMETHYST_FAIR_VALUE
         else:
             fair = mid
@@ -287,15 +318,15 @@ class Trader:
         deviation = mid - ema
         trend = fast_ema - ema
         warmup = min(1.0, count / 100.0)
-        if symbol == "PAPER_LANTERNS":
+        if symbol in self.MOMENTUM_PRODUCTS:
             fair += self.PAPER_MOMENTUM * deviation * warmup
-        elif symbol == "TOFFEE_CAKE":
+        elif symbol in self.REVERSION_PRODUCTS:
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
         elif symbol in self.CAUTIOUS_PRODUCTS:
             # for these products, avoid an unvalidated directional signal
             # and use inventory-aware passive market making instead
             pass
-        elif symbol != "AMETHYST":
+        elif symbol not in self.FUNDAMENTAL_PRODUCTS:
             # A bounded fast/slow EMA spread supplies a small directional
             # bias without allowing one stale tick to move fair value far
             # outside the executable market.
@@ -313,6 +344,8 @@ class Trader:
         position: int,
         fair: float,
         modeled_fair: bool = False,
+        net_delta: float = 0.0,
+        unit_delta: float = 0.0,
     ) -> List[Order]:
         orders: List[Order] = []
         limit = POSITION_LIMITS.get(symbol)
@@ -344,6 +377,7 @@ class Trader:
         # weak products are quoted passively only, with wider prices and
         # reduced inventory; this is an experiment, not a proven improvement
         cautious = symbol in self.CAUTIOUS_PRODUCTS
+        passive_wing = self._option_strike(symbol) in self.PASSIVE_ONLY_STRIKES
 
         # Cross only when the modeled edge covers a small execution buffer.
         # The buffer is deliberately below a full spread: a directional fair
@@ -352,23 +386,53 @@ class Trader:
             take_edge = max(self.OPTION_TAKE_EDGE, spread * 0.75)
         else:
             take_edge = max(self.MIN_TAKE_EDGE, spread * 0.25)
-        if not cautious and book.sell_orders and best_ask <= fair - take_edge and buy_capacity:
-            quantity = min(buy_capacity, ask_volume, self._order_size(symbol))
+        if (
+            not cautious
+            and not passive_wing
+            and book.sell_orders
+            and best_ask <= fair - take_edge
+            and buy_capacity
+        ):
+            quantity = min(
+                buy_capacity,
+                ask_volume,
+                self._order_size(symbol),
+                self._delta_capacity(
+                    net_delta, unit_delta, 1, self.OPTION_DELTA_LIMIT
+                ),
+            )
             if quantity > 0:
                 orders.append(Order(symbol, best_ask, quantity))
                 buy_capacity -= quantity
+                net_delta += quantity * unit_delta
 
-        if not cautious and book.buy_orders and best_bid >= fair + take_edge and sell_capacity:
-            quantity = min(sell_capacity, bid_volume, self._order_size(symbol))
+        if (
+            not cautious
+            and not passive_wing
+            and book.buy_orders
+            and best_bid >= fair + take_edge
+            and sell_capacity
+        ):
+            quantity = min(
+                sell_capacity,
+                bid_volume,
+                self._order_size(symbol),
+                self._delta_capacity(
+                    net_delta, unit_delta, -1, self.OPTION_DELTA_LIMIT
+                ),
+            )
             if quantity > 0:
                 orders.append(Order(symbol, best_bid, -quantity))
                 sell_capacity -= quantity
+                net_delta -= quantity * unit_delta
 
         # Quote around the reservation price while staying behind the
         # opposite best quote, so these orders cannot accidentally cross.
         half_width = max(0.5, spread / 2.0)
         if cautious:
             half_width *= self.CAUTIOUS_HALF_SPREAD_MULTIPLIER
+        if passive_wing:
+            half_width *= self.PASSIVE_WING_SPREAD_MULTIPLIER
         bid_price = min(best_ask - 1, math.floor(reservation - half_width))
         ask_price = max(best_bid + 1, math.ceil(reservation + half_width))
 
@@ -388,15 +452,29 @@ class Trader:
         # crosses fair value and knowingly locks in a loss.
         if buy_capacity > 0:
             bid_price = min(bid_price, math.floor(fair - 0.5))
-            quantity = min(buy_capacity, buy_size)
+            quantity = min(
+                buy_capacity,
+                buy_size,
+                self._delta_capacity(
+                    net_delta, unit_delta, 1, self.OPTION_DELTA_LIMIT
+                ),
+            )
             if quantity > 0:
                 orders.append(Order(symbol, bid_price, quantity))
+                net_delta += quantity * unit_delta
 
         if sell_capacity > 0:
             ask_price = max(ask_price, math.ceil(fair + 0.5))
-            quantity = min(sell_capacity, sell_size)
+            quantity = min(
+                sell_capacity,
+                sell_size,
+                self._delta_capacity(
+                    net_delta, unit_delta, -1, self.OPTION_DELTA_LIMIT
+                ),
+            )
             if quantity > 0:
                 orders.append(Order(symbol, ask_price, -quantity))
+                net_delta -= quantity * unit_delta
 
         return orders
 
@@ -413,11 +491,9 @@ class Trader:
             memory["count"] = {}
 
         option_fairs = self._option_fair_values(state.order_depths)
+        net_delta = self._portfolio_delta(state.order_depths, state.position)
         result: Dict[str, List[Order]] = {}
         for symbol, book in state.order_depths.items():
-            # test removing the consistently loss-making deepest call strike
-            if self._option_strike(symbol) in self.DISABLED_STRIKES:
-                continue
             if not book.buy_orders or not book.sell_orders:
                 continue
             best_bid, best_ask = self._best_prices(book)
@@ -427,15 +503,36 @@ class Trader:
             if symbol in option_fairs:
                 fair = option_fairs[symbol]
                 modeled_fair = True
+            if self._option_strike(symbol) in self.PASSIVE_ONLY_STRIKES:
+                # Wing prices are intentionally market-based only.
+                fair = mid
+                modeled_fair = False
+            strike = self._option_strike(symbol)
+            if symbol == "LYCHEE":
+                unit_delta = 1.0
+            elif strike is not None and state.order_depths.get("LYCHEE"):
+                lychee = state.order_depths["LYCHEE"]
+                if lychee.buy_orders and lychee.sell_orders:
+                    lychee_bid, lychee_ask = self._best_prices(lychee)
+                    unit_delta = self._option_delta(
+                        (lychee_bid + lychee_ask) / 2.0, strike
+                    )
+                else:
+                    unit_delta = 0.0
+            else:
+                unit_delta = 0.0
             orders = self._make_orders(
                 symbol,
                 book,
                 int(state.position.get(symbol, 0)),
                 fair,
                 modeled_fair,
+                net_delta,
+                unit_delta,
             )
             if orders:
                 result[symbol] = orders
+                net_delta += sum(order.quantity for order in orders) * unit_delta
 
         memory["last_timestamp"] = timestamp
         return result, 0, json.dumps(memory, separators=(",", ":"))
