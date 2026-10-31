@@ -1,15 +1,21 @@
 # QuantiFi Competition Team 23
 
-The single active algorithm is **Team23_Trader.py (V12)**. Earlier sources and official UTEFA backtest logs are archived under logs/v1 through logs/v12. Use this root file for the next backtest.
+This is an implementation of an inventory-aware multi-product trading model that combines fair-value estimation, EMA momentum/reversion signals, option pricing, and relative-value
+trading. It takes liquidity only when the estimated edge covers execution risk
+and keeps positions within product limits.
 
-V12 combines fixed-value AMETHYST pricing, PAPER_LANTERNS momentum, TOFFEE_CAKE mean reversion, bounded trend/imbalance quoting, peer-relative PINK_PEARLS pricing, and call valuation from neighboring implied total volatilities. Option values respect executable peer-strike bounds. Basket cross-signals remain disabled.
+- **Core signals:** fixed-value AMETHYST pricing, EMA momentum/reversion signals and bounded
+  trend/imbalance quoting on fruit products.
+- **Options:** Black-Scholes voucher pricing with conservative wing handling.
+- **Risk:** inventory skew, portfolio-aware underlying hedge quotes, position limits, and
+  persistent state between ticks.
 
-Execution uses separate pending buy/sell delta reservations, serialized traderData, six-unit core orders, different momentum/reversion inventory targets, and passive inventory-reducing concessions on non-core products. Entry filters do not block bounded JELLY exits.
+The active file is **Team23_Trader.py (V13)**. UTEFA result: **123,640.5 PnL**, **4,128.5 maximum drawdown**, and **26/26 products traded**. This preserves coverage, adds 193.5 historical PnL and reduces drawdown by 292.5 versus V12. The small PnL difference is not proof of improved OOS returns.
 
-The selected candidate returned **123,447 PnL**, traded **26/26 products**, and had **4,421 maximum drawdown** on UTEFA's three supplied days. Versus V11 this is **2.89% more profit and 1.57% less drawdown**. Day 0 worsened; these are reused training-data results, not independent OOS validation.
+See [V13 comparison and rubric review](logs/v13/RESULTS.md), [strategy explanation](STRATEGY.md), and the raw `.log` files in [logs/v13](logs/v13). Local diagnostics live in that folder's `tools` directory; no local backtester is used. Run `python3 logs/v13/tools/summarize_log.py logs/v13/Team23_Trader_V13.log` to reproduce its summary.
 
-See [V12 experiments and rubric assessment](logs/v12/RESULTS.md), [strategy guide](STRATEGY.md), [V11 rubric review](logs/v11/RUBRIC_REVIEW.md), and [comparison CSV](logs/v12/comparison.csv). Raw .log files are committed alongside the metrics for every version.
+## Backtest diagrams
 
-Reproduce a log summary with `python3 analysis/analyze_v10.py logs/v12/Team23_Trader_V12.log`. Correctness checks: `python3 analysis/test_v10.py Team23_Trader.py`, `python3 analysis/test_option_bounds.py`, and `python3 analysis/test_inventory_exits.py Team23_Trader.py`.
+![V13 UTEFA P&L](logs/v13/final_backtest.png)
 
-The older PDF abstract is not synchronized with V12. Before the competition form submission, write an abstract describing this final model, add Team 23 and member names at the top of page one, and keep it within five pages. Names have not yet been supplied.
+![V13 UTEFA positions](logs/v13/positions.png)

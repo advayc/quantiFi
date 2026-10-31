@@ -1,6 +1,6 @@
-"""QuantiFi Team 23, V12: causal multi-product market making.
+"""QuantiFi Team 23, V13: causal multi-product market making.
 
-Preserves V8 Growth's directional models. Independent buy/sell delta
+Preserves the core directional models; LYCHEE quotes hedge held call delta. Independent buy/sell delta
 reservations prevent unfilled opposite orders from masking exposure.
 All persistent state is carried in traderData. Historical performance is
 not an estimate of guaranteed out-of-sample returns.
@@ -122,6 +122,7 @@ class Trader:
     PEARL_CAP = 0.8
     PEARLS = ("WHITE_PEARLS", "BLACK_PEARLS", "GOLDEN_PEARLS", "PINK_PEARLS", "BLUE_PEARLS")
     # only moderate total delta exposure; wing quotes get smaller risk budgets
+    ENABLE_PORTFOLIO_HEDGE = True
     OPTION_DELTA_LIMIT = 35.0
     DELTA_TOTAL_VOL = 0.10  # fallback only when no reliable live volatility exists
     CAUTIOUS_PRODUCTS = {"JELLY", "PEANUT_BUTTER", "BLACK_PEARLS"}
@@ -375,7 +376,7 @@ class Trader:
         elif symbol == "TELLURIUM":
             fraction = 0.25
         elif symbol == "LYCHEE":
-            # Limit outright underlying inventory; this is not an active hedge.
+            # Cap the underlying position even when used as a passive hedge.
             fraction = cls.LYCHEE_RISK_FRACTION
         elif symbol == "JELLY" and cls.ENABLE_JELLY_QUOTES:
             fraction = cls.JELLY_RISK_FRACTION
@@ -429,7 +430,7 @@ class Trader:
         elif symbol == "TOFFEE_CAKE":
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
         elif symbol == "JELLY" and self.ENABLE_JELLY_QUOTES:
-            # Optional bounded directional tilt; disabled in selected V12.
+            # Optional bounded directional tilt; disabled in selected V13.
             correction = self.JELLY_MOMENTUM * deviation * warmup
             fair += max(-self.JELLY_SIGNAL_CAP, min(self.JELLY_SIGNAL_CAP, correction))
         elif symbol in self.CAUTIOUS_PRODUCTS:
@@ -457,6 +458,7 @@ class Trader:
         unit_delta: float = 0.0,
         delta_lower=None,
         reduce_only: bool = False,
+        portfolio_delta=None,
     ) -> List[Order]:
         # Upper bound reserves every proposed buy; lower reserves every sell.
         # Never credit an unfilled opposite-side order against either bound.
@@ -483,7 +485,13 @@ class Trader:
 
         # inventory shifts the reservation price toward reducing exposure.
         risk_limit = self._risk_limit(symbol, limit)
-        inventory_skew = (position / float(risk_limit)) * max(2.0, spread * 0.50)
+        # The underlying is also the hedge instrument for held call delta.
+        # A short LYCHEE position offsetting long calls should not be unwound
+        # merely because its standalone position is short.
+        hedging = symbol == "LYCHEE" and self.ENABLE_PORTFOLIO_HEDGE and portfolio_delta is not None
+        risk_position = float(portfolio_delta) if hedging else position
+        risk_scale = self.OPTION_DELTA_LIMIT if hedging else float(risk_limit)
+        inventory_skew = (risk_position / risk_scale) * max(2.0, spread * 0.50)
         reservation = fair - inventory_skew
 
         buy_capacity = max(0, risk_limit - position)
@@ -532,11 +540,11 @@ class Trader:
         ask_price = max(best_bid + 1, math.ceil(reservation + half_width))
 
         base_size = self._order_size(symbol)
-        inventory_fraction = min(1.0, abs(position) / float(risk_limit))
-        if position > 0:
+        inventory_fraction = min(1.0, abs(risk_position) / risk_scale)
+        if risk_position > 0:
             buy_size = max(1, int(round(base_size * (1.0 - 0.70 * inventory_fraction))))
             sell_size = max(1, int(round(base_size * (1.0 + 0.50 * inventory_fraction))))
-        elif position < 0:
+        elif risk_position < 0:
             buy_size = max(1, int(round(base_size * (1.0 + 0.50 * inventory_fraction))))
             sell_size = max(1, int(round(base_size * (1.0 - 0.70 * inventory_fraction))))
         else:
@@ -546,15 +554,15 @@ class Trader:
         # side can concede part of the spread; never exceed the held amount
         # on that concessional quote or cross the opposite top of book.
         exit_allowance = 0.0
-        if symbol in self.INVENTORY_EXIT_PRODUCTS and position:
+        if symbol in self.INVENTORY_EXIT_PRODUCTS and position and not hedging:
             exit_allowance = min(spread / 2.0, abs(inventory_skew))
             if position > 0:
                 sell_size = min(sell_size, max(0, position - sum(-o.quantity for o in orders if o.quantity < 0)))
             else:
                 buy_size = min(buy_size, max(0, -position - sum(o.quantity for o in orders if o.quantity > 0)))
         # Entry-side quotes retain a small estimated edge.
-        # Prices retain an edge to estimated fair value. Estimation errors
-        # and later market moves can still cause losses.
+        # Entry prices retain an edge to estimated fair value. Risk-reducing
+        # exits can concede edge; estimation errors can still cause losses.
         if buy_capacity > 0:
             bid_price = min(bid_price, math.floor(fair - 0.5 + (exit_allowance if position < 0 else 0.0)))
             quantity = min(buy_capacity, buy_size, self._delta_budget(delta_upper, unit_delta, 1, self.OPTION_DELTA_LIMIT))
@@ -636,6 +644,10 @@ class Trader:
             if symbol in option_fairs:
                 fair = option_fairs[symbol]
                 modeled_fair = True
+            if symbol == "LYCHEE" and self.ENABLE_PORTFOLIO_HEDGE:
+                # No competing outright trend/imbalance forecast on the hedge.
+                fair = mid
+                modeled_fair = True
             strike = self._option_strike(symbol)
             if strike in self.PASSIVE_WINGS:
                 fair = mid
@@ -662,6 +674,7 @@ class Trader:
                 unit_delta,
                 delta_lower,
                 reduce_only,
+                net_delta,
             )
             if orders:
                 result[symbol] = orders

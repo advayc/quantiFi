@@ -1,0 +1,9 @@
+{
+  "Team23_Trader.py": "cc09df25baccd65705ddae2aead05b277e88e0801cb1a59ad844f93e8dd129e8",
+  "logs/v13/V12_baseline.py": "e3ea1a8bbcd32dc492bd6ff5e9f05fa27e869ed665b96835c93e60db4e02c451",
+  "logs/v13/candidates/V13A_PortfolioHedge.py": "cdba7018ce426a61fa5532dd5da875619139ded88ce64fd2cc8ca42100996a94",
+  "logs/v13/candidates/V13B_ConvexBounds.py": "e12d528860b538b87496d48e34e1301f591061bc8705fa9b265fc045d8896dae",
+  "logs/v13/Team23_Trader_V13.log": "c70e8904f8658a779f0f2f3c96307ae6c0f73cd2d7e7311d436fd6886578b08f",
+  "logs/v13/V13A_PortfolioHedge.log": "c70e8904f8658a779f0f2f3c96307ae6c0f73cd2d7e7311d436fd6886578b08f",
+  "logs/v13/V13B_ConvexBounds.log": "98991fa1e17b0f17a874c377f386523edbf700d0617b5ee4079e804417fa3816"
+}

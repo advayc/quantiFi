@@ -1,0 +1,4 @@
+V13A_PortfolioHedge.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V13B_ConvexBounds.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V13A_PortfolioHedge.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases
+V13B_ConvexBounds.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases

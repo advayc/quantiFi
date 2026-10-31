@@ -1,0 +1,4 @@
+Team23_Trader.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+PASS: peer-strike bounds, intrinsic limits and inconsistent-chain fallback
+PASS: 3,000 concessional exit cases; held-quantity cap and passive pricing
+Team23_Trader.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases

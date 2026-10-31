@@ -1,0 +1,41 @@
+{
+  "prices_day_-1.csv": {
+    "initial_mids": {
+      "FRUIT_BASKET": 16933.0,
+      "DRAGONFRUIT": 3219.0,
+      "GRANADILLA": 1901.5,
+      "MANGOSTEEN": 3986.0
+    },
+    "fruit_return_basket_next_move_correlation": {
+      "1": -0.007455133840786592,
+      "5": -0.012699360091787721,
+      "25": -0.010494100964399672
+    }
+  },
+  "prices_day_-2.csv": {
+    "initial_mids": {
+      "FRUIT_BASKET": 15221.0,
+      "DRAGONFRUIT": 3000.0,
+      "GRANADILLA": 2000.0,
+      "MANGOSTEEN": 3999.5
+    },
+    "fruit_return_basket_next_move_correlation": {
+      "1": 0.0034748035959457422,
+      "5": -0.0006012540931896545,
+      "25": 0.007282360573634426
+    }
+  },
+  "prices_day_0.csv": {
+    "initial_mids": {
+      "FRUIT_BASKET": 17804.5,
+      "DRAGONFRUIT": 3364.0,
+      "GRANADILLA": 2200.5,
+      "MANGOSTEEN": 4235.5
+    },
+    "fruit_return_basket_next_move_correlation": {
+      "1": 0.009835064488551754,
+      "5": 0.007315933740780395,
+      "25": 0.009323363713087028
+    }
+  }
+}

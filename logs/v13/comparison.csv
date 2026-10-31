@@ -1,0 +1,4 @@
+version,total_pnl,historical_mean_daily,day_minus2,day_minus1,day0,drawdown,products_traded,fills,nonempty_logs
+Team23_Trader_V12,123447.0,41149.0,43865.0,43429.5,36152.5,4421.0,26,24511,0
+V13A_PortfolioHedge,123640.5,41213.5,44521.5,42591.5,36527.5,4128.5,26,24576,0
+V13B_ConvexBounds,121736.0,40578.666666666664,42792.0,42897.5,36046.5,4500.5,26,24824,0

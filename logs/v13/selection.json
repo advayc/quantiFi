@@ -1,0 +1,5 @@
+{
+  "candidate": "V13A_PortfolioHedge",
+  "metrics": "V13A_PortfolioHedge.metrics.json",
+  "reason": "Select the portfolio-aware passive hedge. It increases historical PnL slightly and lowers drawdown while preserving all 26 markets. Convexity candidate B loses 1,711 versus V12 and has higher drawdown, so it is rejected. The proposed combined candidate is not run because the isolated convexity experiment did not support inclusion. The active code retains V12 vertical-spread checks and does not add the rejected convexity logic."
+}
