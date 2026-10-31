@@ -1,10 +1,10 @@
 """QuantiFi 2026 team 23 trading algorithm.
 
-v7 controlled hybrid based on v5/v6 comparative backtests.
+v8 aggressive position-capacity sensitivity experiment.
 
-keeps the validated ema and option strategies intact. the new fruit and pearl
-models are disabled by default except for a separately tested, small pink-pearl
-signal. all performance estimates require an official quantifi backtest.
+based on v7, preserving its validated directional models. v8 tests more
+capacity in profitable product families, constrained lychee exposure, and
+small passive jelly quotes. no pnl improvement is claimed until backtested.
 """
 
 import json
@@ -72,6 +72,20 @@ class Trader:
     TOFFEE_MEAN_REVERSION = 0.20
     GENERAL_MOMENTUM = 0.30
     MAX_SIGNAL_MOVE = 2.0
+
+    # exposure changes are the main v8 experiment; changing the alpha models
+    # at the same time would make the results hard to interpret
+    CORE_RISK_FRACTION = 0.90
+    PROFITABLE_VOUCHER_RISK_FRACTION = 0.36
+    LYCHEE_RISK_FRACTION = 0.12
+    STABLE_VOUCHER_STRIKES = {7000, 7300, 7400, 7500, 7600, 7750, 7900}
+
+    # an isolated low-risk breadth experiment on a wide-spread product
+    ENABLE_JELLY_QUOTES = False
+    JELLY_RISK_FRACTION = 0.08
+    JELLY_HALF_SPREAD_MULTIPLIER = 0.85
+    JELLY_MOMENTUM = 0.08
+    JELLY_SIGNAL_CAP = 1.5
 
     DEFAULT_ORDER_SIZE = 2
     VOUCHER_ORDER_SIZE = 1
@@ -315,13 +329,24 @@ class Trader:
         if symbol == "AMETHYST":
             fraction = 1.0
         elif symbol in ("PAPER_LANTERNS", "TOFFEE_CAKE"):
-            fraction = 0.75
+            # these strategies were positive in each of the three training days
+            fraction = Trader.CORE_RISK_FRACTION
         elif symbol == "TELLURIUM":
             fraction = 0.25
+        elif symbol == "LYCHEE":
+            # lychee was net negative in v7; retain trading for option hedges
+            # but avoid the historically oversized outright inventory
+            fraction = Trader.LYCHEE_RISK_FRACTION
+        elif symbol == "JELLY" and Trader.ENABLE_JELLY_QUOTES:
+            fraction = Trader.JELLY_RISK_FRACTION
         elif symbol in Trader.CAUTIOUS_PRODUCTS:
             fraction = 0.20
         elif Trader._option_strike(symbol) in Trader.PASSIVE_WINGS:
             fraction = 0.15
+        elif Trader._option_strike(symbol) in Trader.STABLE_VOUCHER_STRIKES:
+            # seven interior strikes earned positive pnl on every training day
+            # the remaining voucher strikes retain v7's conservative budget
+            fraction = Trader.PROFITABLE_VOUCHER_RISK_FRACTION
         elif symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
             fraction = 0.25
         else:
@@ -363,9 +388,13 @@ class Trader:
             fair += self.PAPER_MOMENTUM * deviation * warmup
         elif symbol == "TOFFEE_CAKE":
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
+        elif symbol == "JELLY" and self.ENABLE_JELLY_QUOTES:
+            # the historical 25-tick continuation signal was positive on all
+            # three training days; use it only to tilt small passive quotes
+            correction = self.JELLY_MOMENTUM * deviation * warmup
+            fair += max(-self.JELLY_SIGNAL_CAP, min(self.JELLY_SIGNAL_CAP, correction))
         elif symbol in self.CAUTIOUS_PRODUCTS:
-            # for these products, avoid an unvalidated directional signal
-            # and use inventory-aware passive market making instead
+            # for these products, avoid unvalidated directional signals
             pass
         elif symbol != "AMETHYST":
             # A bounded fast/slow EMA spread supplies a small directional
@@ -443,7 +472,11 @@ class Trader:
         # Quote around the reservation price while staying behind the
         # opposite best quote, so these orders cannot accidentally cross.
         half_width = max(0.5, spread / 2.0)
-        if cautious:
+        if symbol == "JELLY" and self.ENABLE_JELLY_QUOTES:
+            # place an occasional competitive passive quote inside the wide
+            # jelly spread, with inventory capped to four contracts
+            half_width *= self.JELLY_HALF_SPREAD_MULTIPLIER
+        elif cautious:
             half_width *= self.CAUTIOUS_HALF_SPREAD_MULTIPLIER
         if self._option_strike(symbol) in self.PASSIVE_WINGS:
             half_width *= self.WING_QUOTE_MULTIPLIER
@@ -514,7 +547,9 @@ class Trader:
             best_bid, best_ask = self._best_prices(book)
             mid = (best_bid + best_ask) / 2.0
             fair = self._update_fair_value(symbol, mid, memory)
-            modeled_fair = symbol == "AMETHYST"
+            modeled_fair = symbol == "AMETHYST" or (
+                symbol == "JELLY" and self.ENABLE_JELLY_QUOTES
+            )
             # only enable signals with a positive controlled test result
             # pink pearls improved slightly in v6; all other additions hurt
             apply_cross = (
