@@ -1,9 +1,9 @@
-"""QuantiFi 2026 trading algorithm.
+"""QuantiFi 2026 team 23 trading algorithm.
 
-The strategy combines a known-value anchor for AMETHYST, two small
-product-specific price signals, and inventory-aware market making across the
-remaining products.  It uses only the current TradingState and the compact
-EMA state carried through traderData.
+The trader uses a fixed-value anchor for AMETHYST, trend and reversion signals
+for two products, a cross-strike option valuation for LYCHEE calls, and
+conservative two-sided market making for the remaining products. All positions
+are kept inside the competition's published limits.
 """
 
 import json
@@ -40,8 +40,22 @@ for _strike in VOUCHER_STRIKES:
     POSITION_LIMITS[f"LYCHEE_VOUCHERS_{_strike}"] = 50
 
 BASE_ORDER_SIZE: Dict[str, int] = {
-    "TELLURIUM": 2,
-    "FRUIT_BASKET": 3,
+    "AMETHYST": 5,
+    "PAPER_LANTERNS": 4,
+    "TOFFEE_CAKE": 4,
+    "TELLURIUM": 1,
+    "FRUIT_BASKET": 2,
+    "DRAGONFRUIT": 2,
+    "GRANADILLA": 2,
+    "MANGOSTEEN": 2,
+    "JELLY": 2,
+    "PEANUT_BUTTER": 2,
+    "LYCHEE": 3,
+    "WHITE_PEARLS": 2,
+    "BLACK_PEARLS": 2,
+    "GOLDEN_PEARLS": 2,
+    "PINK_PEARLS": 2,
+    "BLUE_PEARLS": 2,
 }
 
 
@@ -55,9 +69,12 @@ class Trader:
     PAPER_MOMENTUM = 0.50
     TOFFEE_MEAN_REVERSION = 0.20
 
-    DEFAULT_ORDER_SIZE = 5
-    VOUCHER_ORDER_SIZE = 3
-    MIN_TAKE_EDGE = 1.0
+    DEFAULT_ORDER_SIZE = 2
+    VOUCHER_ORDER_SIZE = 1
+    MIN_TAKE_EDGE = 1.5
+    OPTION_TAKE_EDGE = 6.0
+    MAX_TOTAL_VOL = 0.20
+    MIN_TOTAL_VOL = 0.005
 
     @staticmethod
     def _load_memory(raw: str) -> dict:
@@ -84,6 +101,124 @@ class Trader:
         if symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
             return Trader.VOUCHER_ORDER_SIZE
         return BASE_ORDER_SIZE.get(symbol, Trader.DEFAULT_ORDER_SIZE)
+
+    @staticmethod
+    def _option_strike(symbol: str):
+        if symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
+            try:
+                strike = int(symbol.rsplit("_", 1)[1])
+                return strike if strike in VOUCHER_STRIKES else None
+            except (IndexError, ValueError):
+                return None
+        return None
+
+    @staticmethod
+    def _normal_cdf(value: float) -> float:
+        return 0.5 * (1.0 + math.erf(value / math.sqrt(2.0)))
+
+    @classmethod
+    def _call_price(cls, spot: float, strike: int, total_vol: float) -> float:
+        """Black-Scholes call value using total volatility sigma * sqrt(T)."""
+        if total_vol <= 0.0:
+            return max(spot - strike, 0.0)
+        d1 = (math.log(spot / strike) + 0.5 * total_vol * total_vol) / total_vol
+        d2 = d1 - total_vol
+        return spot * cls._normal_cdf(d1) - strike * cls._normal_cdf(d2)
+
+    @classmethod
+    def _implied_total_vol(cls, price: float, spot: float, strike: int):
+        """Infer total volatility from a call mid; reject unstable wing quotes."""
+        intrinsic = max(spot - strike, 0.0)
+        if price <= intrinsic + 0.05 or price >= spot - 0.05:
+            return None
+
+        low, high = cls.MIN_TOTAL_VOL, cls.MAX_TOTAL_VOL
+        if cls._call_price(spot, strike, high) < price:
+            return None
+        for _ in range(16):
+            middle = (low + high) / 2.0
+            if cls._call_price(spot, strike, middle) < price:
+                low = middle
+            else:
+                high = middle
+
+        total_vol = (low + high) / 2.0
+        d1 = (math.log(spot / strike) + 0.5 * total_vol * total_vol) / total_vol
+        vega = spot * math.exp(-0.5 * d1 * d1) / math.sqrt(2.0 * math.pi)
+        return total_vol if vega >= 80.0 else None
+
+    def _option_fair_values(self, books: dict):
+        """Price each call from neighboring strikes, leaving it out of its fit.
+
+        This uses the live option chain to infer the current volatility smile,
+        so it does not need a day counter or a guessed expiry at OOS startup.
+        If the live chain has too few reliable peer strikes, the contract
+        falls back to ordinary order-book market making.
+        """
+        underlying = books.get("LYCHEE")
+        if underlying is None or not underlying.buy_orders or not underlying.sell_orders:
+            return {}
+        spot = (
+            max(underlying.buy_orders) + min(underlying.sell_orders)
+        ) / 2.0
+        if spot <= 0:
+            return {}
+
+        option_mids = {}
+        for symbol, book in books.items():
+            strike = self._option_strike(symbol)
+            if strike is None or not book.buy_orders or not book.sell_orders:
+                continue
+            best_bid, best_ask = self._best_prices(book)
+            option_mids[symbol] = (
+                strike,
+                (best_bid + best_ask) / 2.0,
+            )
+
+        nodes = []
+        for symbol, (strike, mid) in option_mids.items():
+            total_vol = self._implied_total_vol(mid, spot, strike)
+            if total_vol is not None:
+                nodes.append((math.log(strike / spot), strike, total_vol))
+        nodes.sort(key=lambda node: node[0])
+
+        fairs = {}
+        for symbol, (strike, _) in option_mids.items():
+            x = math.log(strike / spot)
+            peers = [node for node in nodes if node[1] != strike]
+            lower = [node for node in peers if node[0] < x]
+            upper = [node for node in peers if node[0] > x]
+            if lower and upper:
+                x1, _, v1 = lower[-1]
+                x2, _, v2 = upper[0]
+            elif len(peers) >= 2:
+                nearest = sorted(peers, key=lambda node: abs(node[0] - x))[:2]
+                nearest.sort(key=lambda node: node[0])
+                (x1, _, v1), (x2, _, v2) = nearest
+            else:
+                continue
+
+            if x2 == x1:
+                continue
+            total_vol = v1 + (v2 - v1) * (x - x1) / (x2 - x1)
+            total_vol = max(self.MIN_TOTAL_VOL, min(self.MAX_TOTAL_VOL, total_vol))
+            fairs[symbol] = self._call_price(spot, strike, total_vol)
+        return fairs
+
+    @staticmethod
+    def _risk_limit(symbol: str, hard_limit: int) -> int:
+        """Use softer exposure targets to reduce adverse-selection losses."""
+        if symbol == "AMETHYST":
+            fraction = 1.0
+        elif symbol in ("PAPER_LANTERNS", "TOFFEE_CAKE"):
+            fraction = 0.75
+        elif symbol == "TELLURIUM":
+            fraction = 0.25
+        elif symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
+            fraction = 0.25
+        else:
+            fraction = 0.50
+        return max(1, int(hard_limit * fraction))
 
     def _update_fair_value(
         self, symbol: str, mid: float, memory: dict
@@ -115,7 +250,12 @@ class Trader:
         return fair
 
     def _make_orders(
-        self, symbol: str, book: OrderDepth, position: int, fair: float
+        self,
+        symbol: str,
+        book: OrderDepth,
+        position: int,
+        fair: float,
+        modeled_fair: bool = False,
     ) -> List[Order]:
         orders: List[Order] = []
         limit = POSITION_LIMITS.get(symbol)
@@ -130,23 +270,27 @@ class Trader:
         spread = max(1, best_ask - best_bid)
 
         # Top-of-book size imbalance gives a small short-horizon fair-value
-        # adjustment. The coefficient is intentionally conservative.
+        # adjustment for products without a stronger valuation model.
         total_top_volume = bid_volume + ask_volume
-        if total_top_volume:
+        if total_top_volume and not modeled_fair:
             imbalance = (bid_volume - ask_volume) / total_top_volume
             fair += 0.25 * (spread / 2.0) * imbalance
 
         # Inventory shifts the reservation price toward reducing exposure.
-        inventory_skew = (position / float(limit)) * max(2.0, spread * 0.50)
+        risk_limit = self._risk_limit(symbol, limit)
+        inventory_skew = (position / float(risk_limit)) * max(2.0, spread * 0.50)
         reservation = fair - inventory_skew
 
-        buy_capacity = max(0, limit - position)
-        sell_capacity = max(0, limit + position)
+        buy_capacity = max(0, risk_limit - position)
+        sell_capacity = max(0, risk_limit + position)
 
         # Take only when the visible price is clearly favorable to the fair
         # value estimate. For ordinary mid-based products this rarely fires;
         # it is useful for the AMETHYST anchor and the two signal products.
-        take_edge = max(self.MIN_TAKE_EDGE, spread * 0.20)
+        if self._option_strike(symbol) is not None and modeled_fair:
+            take_edge = max(self.OPTION_TAKE_EDGE, spread * 0.75)
+        else:
+            take_edge = max(self.MIN_TAKE_EDGE, spread * 0.50)
         if book.sell_orders and best_ask <= fair - take_edge and buy_capacity:
             quantity = min(buy_capacity, ask_volume, self._order_size(symbol))
             if quantity > 0:
@@ -166,7 +310,7 @@ class Trader:
         ask_price = max(best_bid + 1, math.ceil(reservation + half_width))
 
         base_size = self._order_size(symbol)
-        inventory_fraction = min(1.0, abs(position) / float(limit))
+        inventory_fraction = min(1.0, abs(position) / float(risk_limit))
         if position > 0:
             buy_size = max(1, int(round(base_size * (1.0 - 0.70 * inventory_fraction))))
             sell_size = max(1, int(round(base_size * (1.0 + 0.50 * inventory_fraction))))
@@ -204,6 +348,7 @@ class Trader:
             memory["ema"] = {}
             memory["count"] = {}
 
+        option_fairs = self._option_fair_values(state.order_depths)
         result: Dict[str, List[Order]] = {}
         for symbol, book in state.order_depths.items():
             if not book.buy_orders or not book.sell_orders:
@@ -211,8 +356,16 @@ class Trader:
             best_bid, best_ask = self._best_prices(book)
             mid = (best_bid + best_ask) / 2.0
             fair = self._update_fair_value(symbol, mid, memory)
+            modeled_fair = symbol == "AMETHYST"
+            if symbol in option_fairs:
+                fair = option_fairs[symbol]
+                modeled_fair = True
             orders = self._make_orders(
-                symbol, book, int(state.position.get(symbol, 0)), fair
+                symbol,
+                book,
+                int(state.position.get(symbol, 0)),
+                fair,
+                modeled_fair,
             )
             if orders:
                 result[symbol] = orders
