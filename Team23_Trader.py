@@ -1,9 +1,9 @@
 """QuantiFi 2026 team 23 trading algorithm.
 
-The trader combines fixed-value anchoring, adaptive fast/slow EMA signals,
-cross-strike Black-Scholes valuation for LYCHEE vouchers, and inventory-aware
-market making. It crosses the spread only when modeled edge covers execution
-costs, while keeping all positions inside the published limits.
+Experimental v3 based on the original profitable baseline.
+
+Retains the original pricing for strong products; tests reducing exposure to
+historically weak products. Results require an official QuantiFi backtest.
 """
 
 import json
@@ -79,6 +79,13 @@ class Trader:
     MAX_TOTAL_VOL = 0.20
     MIN_TOTAL_VOL = 0.005
 
+    # experimental controls: isolate historically weak products without
+    # changing the proven paper lanterns and toffee cake signals
+    DISABLED_STRIKES = {6800}
+    CAUTIOUS_PRODUCTS = {"JELLY", "PEANUT_BUTTER", "BLACK_PEARLS"}
+    CAUTIOUS_SIZE = 1
+    CAUTIOUS_HALF_SPREAD_MULTIPLIER = 1.5
+
     @staticmethod
     def _load_memory(raw: str) -> dict:
         if not raw:
@@ -119,6 +126,8 @@ class Trader:
     def _order_size(symbol: str) -> int:
         if symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
             return Trader.VOUCHER_ORDER_SIZE
+        if symbol in Trader.CAUTIOUS_PRODUCTS:
+            return Trader.CAUTIOUS_SIZE
         return BASE_ORDER_SIZE.get(symbol, Trader.DEFAULT_ORDER_SIZE)
 
     @staticmethod
@@ -239,6 +248,8 @@ class Trader:
             fraction = 0.75
         elif symbol == "TELLURIUM":
             fraction = 0.25
+        elif symbol in Trader.CAUTIOUS_PRODUCTS:
+            fraction = 0.20
         elif symbol.startswith("VOUCHER_") or symbol.startswith("LYCHEE_VOUCHERS_"):
             fraction = 0.25
         else:
@@ -280,6 +291,10 @@ class Trader:
             fair += self.PAPER_MOMENTUM * deviation * warmup
         elif symbol == "TOFFEE_CAKE":
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
+        elif symbol in self.CAUTIOUS_PRODUCTS:
+            # for these products, avoid an unvalidated directional signal
+            # and use inventory-aware passive market making instead
+            pass
         elif symbol != "AMETHYST":
             # A bounded fast/slow EMA spread supplies a small directional
             # bias without allowing one stale tick to move fair value far
@@ -326,6 +341,10 @@ class Trader:
         buy_capacity = max(0, risk_limit - position)
         sell_capacity = max(0, risk_limit + position)
 
+        # weak products are quoted passively only, with wider prices and
+        # reduced inventory; this is an experiment, not a proven improvement
+        cautious = symbol in self.CAUTIOUS_PRODUCTS
+
         # Cross only when the modeled edge covers a small execution buffer.
         # The buffer is deliberately below a full spread: a directional fair
         # value should be able to consume stale top-of-book liquidity.
@@ -333,13 +352,13 @@ class Trader:
             take_edge = max(self.OPTION_TAKE_EDGE, spread * 0.75)
         else:
             take_edge = max(self.MIN_TAKE_EDGE, spread * 0.25)
-        if book.sell_orders and best_ask <= fair - take_edge and buy_capacity:
+        if not cautious and book.sell_orders and best_ask <= fair - take_edge and buy_capacity:
             quantity = min(buy_capacity, ask_volume, self._order_size(symbol))
             if quantity > 0:
                 orders.append(Order(symbol, best_ask, quantity))
                 buy_capacity -= quantity
 
-        if book.buy_orders and best_bid >= fair + take_edge and sell_capacity:
+        if not cautious and book.buy_orders and best_bid >= fair + take_edge and sell_capacity:
             quantity = min(sell_capacity, bid_volume, self._order_size(symbol))
             if quantity > 0:
                 orders.append(Order(symbol, best_bid, -quantity))
@@ -348,6 +367,8 @@ class Trader:
         # Quote around the reservation price while staying behind the
         # opposite best quote, so these orders cannot accidentally cross.
         half_width = max(0.5, spread / 2.0)
+        if cautious:
+            half_width *= self.CAUTIOUS_HALF_SPREAD_MULTIPLIER
         bid_price = min(best_ask - 1, math.floor(reservation - half_width))
         ask_price = max(best_bid + 1, math.ceil(reservation + half_width))
 
@@ -394,6 +415,9 @@ class Trader:
         option_fairs = self._option_fair_values(state.order_depths)
         result: Dict[str, List[Order]] = {}
         for symbol, book in state.order_depths.items():
+            # test removing the consistently loss-making deepest call strike
+            if self._option_strike(symbol) in self.DISABLED_STRIKES:
+                continue
             if not book.buy_orders or not book.sell_orders:
                 continue
             best_bid, best_ask = self._best_prices(book)
