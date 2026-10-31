@@ -6,3 +6,4 @@ output/
 logs/v10/**/*.log
 logs/v10/*.log
 logs/v9/*.log
+logs/v11/*.log

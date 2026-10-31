@@ -1,0 +1,1 @@
+Team23_Trader.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides

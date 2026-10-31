@@ -1,4 +1,4 @@
-"""QuantiFi Team 23, V10: causal multi-product market making.
+"""QuantiFi Team 23, V11: causal multi-product market making.
 
 Preserves V8 Growth's directional models. Independent buy/sell delta
 reservations prevent unfilled opposite orders from masking exposure.
@@ -279,7 +279,25 @@ class Trader:
                 continue
             total_vol = v1 + (v2 - v1) * (x - x1) / (x2 - x1)
             total_vol = max(self.MIN_TOTAL_VOL, min(self.MAX_TOTAL_VOL, total_vol))
-            fairs[symbol] = self._call_price(spot, strike, total_vol)
+            value = self._call_price(spot, strike, total_vol)
+            # A zero-rate call is decreasing and 1-Lipschitz in strike.
+            # Use executable peer bid/ask intervals, not mid-only equalities:
+            # C(K) lies between C(L)-(K-L) and C(L) for L<K,
+            # and between C(U) and C(U)+(U-K) for U>K.
+            # These are valuation guardrails, not atomic multi-leg arbitrage.
+            floor_value = max(0.0, spot - strike)
+            ceiling_value = spot
+            for peer, (peer_strike, _) in option_mids.items():
+                if peer_strike == strike:
+                    continue
+                peer_bid, peer_ask = self._best_prices(books[peer])
+                gap = strike - peer_strike
+                floor_value = max(floor_value, peer_bid - max(0, gap))
+                ceiling_value = min(ceiling_value, peer_ask + max(0, -gap))
+            if floor_value > ceiling_value:
+                # Inconsistent chain: decline its cross-strike valuation.
+                continue
+            fairs[symbol] = max(floor_value, min(ceiling_value, value))
         return fairs
 
     @classmethod
