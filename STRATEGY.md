@@ -39,9 +39,15 @@ flowchart LR
     E --> F[Orders and next traderData]
 ```
 
+## V12 execution improvement
+
+V12 uses six-unit core orders, with a 49-unit PAPER_LANTERNS inventory target and a 45-unit TOFFEE_CAKE target. The differing budgets reflect the tested execution/risk response of momentum and reversion. Pending buys and sells still reserve separate risk budgets.
+
+On non-core spot products, the reducing side may concede a bounded part of the spread to release inventory. For example, with fair 100, best bid/ask 98/102, and an inventory-adjusted reservation of 98, the old fair-edge floor can hold an ask at 101. The new exit rule permits an ask at 100, capped to the inventory still held after earlier reducing orders. New entries retain their estimated-edge requirement. These passive exits can lose estimated edge; their purpose is lower inventory holding risk.
+
 ## PnL: report the experiment accurately
 
-V10's official training result is 119,985 cumulative PnL, or 39,995 mean daily increment. Each supplied day was profitable: 41,488 / 40,977.5 / 37,519.5. Maximum observed drawdown was 4,491.5. V8 Growth returned 112,385.5 with a smaller 4,066 drawdown. V10 increased risk as well as return. Detailed candidate attribution and original logs are under logs/v10.
+V12's selected UTEFA result is 123,447 cumulative PnL, or 41,149 mean daily increment. Each supplied day was profitable: 43,865 / 43,429.5 / 36,152.5. Maximum observed drawdown was 4,421. V11 returned 119,985 with 4,491.5 drawdown. V12 improves total profit and drawdown, but its day 0 result is lower. V8 Growth returned 112,385.5 with a smaller 4,066 drawdown. V10 increased risk as well as return. Detailed comparisons and raw UTEFA logs are under logs/v12, with earlier experiments under logs/v10 and logs/v11.
 
 Reusing the same days for development is not OOS validation. Three positive days and 29 positive historical blocks out of 30 cannot prove future profitability. The actual scoring statistic is average PnL across organizers' unseen runs. No official numerical point weights were supplied; an invented grade would be misleading.
 

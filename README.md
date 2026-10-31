@@ -1,15 +1,15 @@
 # QuantiFi Competition Team 23
 
-The active algorithm is **Team23_Trader.py (V11)**. Earlier versions are archived under logs; only this root trader file should be used for the next backtest.
+The single active algorithm is **Team23_Trader.py (V12)**. Earlier sources and official UTEFA backtest logs are archived under logs/v1 through logs/v12. Use this root file for the next backtest.
 
-V11 combines fixed-value AMETHYST pricing, PAPER_LANTERNS momentum, TOFFEE_CAKE mean reversion, bounded trend/imbalance quotes, peer-relative PINK_PEARLS pricing, and call valuation from neighboring implied total volatilities. Basket cross-signals are disabled. Persistent memory travels in traderData.
+V12 combines fixed-value AMETHYST pricing, PAPER_LANTERNS momentum, TOFFEE_CAKE mean reversion, bounded trend/imbalance quoting, peer-relative PINK_PEARLS pricing, and call valuation from neighboring implied total volatilities. Option values respect executable peer-strike bounds. Basket cross-signals remain disabled.
 
-Risk controls include product inventory targets, separate reservations for potential buy and sell fills, an estimated aggregate delta budget, and JELLY entry filters that still allow inventory reductions. These controls cannot guarantee future profitability.
+Execution uses separate pending buy/sell delta reservations, serialized traderData, six-unit core orders, different momentum/reversion inventory targets, and passive inventory-reducing concessions on non-core products. Entry filters do not block bounded JELLY exits.
 
-The selected capacity candidate returned **119,985 PnL**, traded **26/26 products**, and had **4,491.5 maximum drawdown** on the three supplied days. These are development results on reused training data.
+The selected candidate returned **123,447 PnL**, traded **26/26 products**, and had **4,421 maximum drawdown** on UTEFA's three supplied days. Versus V11 this is **2.89% more profit and 1.57% less drawdown**. Day 0 worsened; these are reused training-data results, not independent OOS validation.
 
-See [V10 comparison and limitations](logs/v10/RESULTS.md), [machine-readable comparison](logs/v10/comparison.csv), and the official logs in [logs/v10](logs/v10).
+See [V12 experiments and rubric assessment](logs/v12/RESULTS.md), [strategy guide](STRATEGY.md), [V11 rubric review](logs/v11/RUBRIC_REVIEW.md), and [comparison CSV](logs/v12/comparison.csv). Raw .log files are committed alongside the metrics for every version.
 
-Reproduce the summaries with `python3 analysis/analyze_v10.py logs/v10/V10D_Capacity.log`; run risk checks with `python3 analysis/test_v10.py Team23_Trader.py`.
+Reproduce a log summary with `python3 analysis/analyze_v10.py logs/v12/Team23_Trader_V12.log`. Correctness checks: `python3 analysis/test_v10.py Team23_Trader.py`, `python3 analysis/test_option_bounds.py`, and `python3 analysis/test_inventory_exits.py Team23_Trader.py`.
 
-V11 adds executable peer-strike valuation bounds to the call model. It reproduces the V10 training result exactly. See [V11 validation](logs/v11/RESULTS.md) and [strategy/rubric guide](STRATEGY.md). The older abstract requires updating before submission.
+The older PDF abstract is not synchronized with V12. Before the competition form submission, write an abstract describing this final model, add Team 23 and member names at the top of page one, and keep it within five pages. Names have not yet been supplied.

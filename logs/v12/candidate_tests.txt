@@ -1,0 +1,5 @@
+V12A_Execution.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V12B_InventoryExit.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V12C_EfficientCapacity.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V12D_Combined.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+V12E_FamilyRisk.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides

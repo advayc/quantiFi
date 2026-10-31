@@ -1,4 +1,4 @@
-"""QuantiFi Team 23, V11: causal multi-product market making.
+"""QuantiFi Team 23, V12: causal multi-product market making.
 
 Preserves V8 Growth's directional models. Independent buy/sell delta
 reservations prevent unfilled opposite orders from masking exposure.
@@ -41,8 +41,8 @@ for _strike in VOUCHER_STRIKES:
 
 BASE_ORDER_SIZE: Dict[str, int] = {
     "AMETHYST": 5,
-    "PAPER_LANTERNS": 4,
-    "TOFFEE_CAKE": 4,
+    "PAPER_LANTERNS": 6,
+    "TOFFEE_CAKE": 6,
     "TELLURIUM": 1,
     "FRUIT_BASKET": 2,
     "DRAGONFRUIT": 2,
@@ -72,9 +72,10 @@ class Trader:
     GENERAL_MOMENTUM = 0.30
     MAX_SIGNAL_MOVE = 2.0
 
-    # V10 capacity: 49 contracts on the two core products and 20 on
+    # V12 capacity: 49 paper contracts, 45 toffee contracts and 20 on
     # selected calls, with independent portfolio delta reservations.
     CORE_RISK_FRACTION = 0.98
+    TOFFEE_RISK_FRACTION = 0.90
     PROFITABLE_VOUCHER_RISK_FRACTION = 0.40
     LYCHEE_RISK_FRACTION = 0.12
     STABLE_VOUCHER_STRIKES = {7000, 7300, 7400, 7500, 7600, 7750, 7900}
@@ -89,6 +90,12 @@ class Trader:
     JELLY_MIN_SPREAD = 11
     JELLY_MAX_TICK_MOVE = 5.0
 
+    # Passive exits may concede estimated edge to reduce non-core inventory.
+    INVENTORY_EXIT_PRODUCTS = {
+        "TELLURIUM", "FRUIT_BASKET", "DRAGONFRUIT", "GRANADILLA",
+        "MANGOSTEEN", "JELLY", "PEANUT_BUTTER", "LYCHEE",
+        "WHITE_PEARLS", "BLACK_PEARLS", "GOLDEN_PEARLS", "PINK_PEARLS", "BLUE_PEARLS",
+    }
     DEFAULT_ORDER_SIZE = 2
     VOUCHER_ORDER_SIZE = 1
     MIN_TAKE_EDGE = 0.5
@@ -360,7 +367,9 @@ class Trader:
         """Use softer exposure targets to reduce adverse-selection losses."""
         if symbol == "AMETHYST":
             fraction = 1.0
-        elif symbol in ("PAPER_LANTERNS", "TOFFEE_CAKE"):
+        elif symbol == "TOFFEE_CAKE":
+            fraction = cls.TOFFEE_RISK_FRACTION
+        elif symbol == "PAPER_LANTERNS":
             # these strategies were positive in each of the three training days
             fraction = cls.CORE_RISK_FRACTION
         elif symbol == "TELLURIUM":
@@ -420,7 +429,7 @@ class Trader:
         elif symbol == "TOFFEE_CAKE":
             fair -= self.TOFFEE_MEAN_REVERSION * deviation * warmup
         elif symbol == "JELLY" and self.ENABLE_JELLY_QUOTES:
-            # Optional bounded directional tilt; disabled in selected V10.
+            # Optional bounded directional tilt; disabled in selected V12.
             correction = self.JELLY_MOMENTUM * deviation * warmup
             fair += max(-self.JELLY_SIGNAL_CAP, min(self.JELLY_SIGNAL_CAP, correction))
         elif symbol in self.CAUTIOUS_PRODUCTS:
@@ -533,18 +542,28 @@ class Trader:
         else:
             buy_size = sell_size = base_size
 
-        # keep at least a small positive edge to the unskewed fair value.
+        # Inventory has a holding cost. For non-core products, the reducing
+        # side can concede part of the spread; never exceed the held amount
+        # on that concessional quote or cross the opposite top of book.
+        exit_allowance = 0.0
+        if symbol in self.INVENTORY_EXIT_PRODUCTS and position:
+            exit_allowance = min(spread / 2.0, abs(inventory_skew))
+            if position > 0:
+                sell_size = min(sell_size, max(0, position - sum(-o.quantity for o in orders if o.quantity < 0)))
+            else:
+                buy_size = min(buy_size, max(0, -position - sum(o.quantity for o in orders if o.quantity > 0)))
+        # Entry-side quotes retain a small estimated edge.
         # Prices retain an edge to estimated fair value. Estimation errors
         # and later market moves can still cause losses.
         if buy_capacity > 0:
-            bid_price = min(bid_price, math.floor(fair - 0.5))
+            bid_price = min(bid_price, math.floor(fair - 0.5 + (exit_allowance if position < 0 else 0.0)))
             quantity = min(buy_capacity, buy_size, self._delta_budget(delta_upper, unit_delta, 1, self.OPTION_DELTA_LIMIT))
             if quantity > 0:
                 orders.append(Order(symbol, bid_price, quantity))
                 delta_upper += quantity * unit_delta
 
         if sell_capacity > 0:
-            ask_price = max(ask_price, math.ceil(fair + 0.5))
+            ask_price = max(ask_price, math.ceil(fair + 0.5 - (exit_allowance if position > 0 else 0.0)))
             quantity = min(sell_capacity, sell_size, self._delta_budget(delta_lower, unit_delta, -1, self.OPTION_DELTA_LIMIT))
             if quantity > 0:
                 orders.append(Order(symbol, ask_price, -quantity))

@@ -8,4 +8,4 @@ Official backtest: 119,985 total PnL; daily increments 41,488 / 40,977.5 / 37,51
 
 Tests: randomized risk invariants, stateless memory, malformed inputs, synthetic option chains across three total-volatility regimes, peer bounds and inconsistent-chain fallback. Run python3 analysis/test_v10.py Team23_Trader.py and python3 analysis/test_option_bounds.py.
 
-The raw log remains available locally in this folder. GitHub includes metrics and source/log hashes; the compressed V10 log is under logs/v10. The raw V11 log is not duplicated in git. These are development results on reused training data. The official judging has no numerical weights supplied here; no estimated grade is presented.
+The raw official .log is included in this folder on GitHub, alongside metrics and source/log hashes. The compressed V10 log is also retained under logs/v10. These are development results on reused training data. The official judging has no numerical weights supplied here; no estimated grade is presented.

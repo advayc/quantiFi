@@ -1,0 +1,15 @@
+{
+  "Team23_Trader.py": "e3ea1a8bbcd32dc492bd6ff5e9f05fa27e869ed665b96835c93e60db4e02c451",
+  "logs/v12/V11_baseline.py": "6f6eac30fae67a28a81ad5b66fc834fc9dcc3c5aa1605c5903671f9fafdaec0a",
+  "logs/v12/candidates/V12A_Execution.py": "2012b64555cebccbaa8f51d27932bc30f1d0f43f6e84f68c6c3a509be91a5bdd",
+  "logs/v12/candidates/V12B_InventoryExit.py": "cf5cc8d2e62e70170e1bd22e50d4e165f9753c066d3865837a320f7254f7d40e",
+  "logs/v12/candidates/V12C_EfficientCapacity.py": "b9243609e4fedc317e24f6f4cd765a44fd98d7a2304c3ef1ec53430bcfcc2c53",
+  "logs/v12/candidates/V12D_Combined.py": "dd9ed6dfa8288c592ea73741147259abcff7347cb38eb6cd261fd6adee186d7e",
+  "logs/v12/candidates/V12E_FamilyRisk.py": "e7e6b56d5ad8eba10b62ea837cd7a7084d51f3b31046e9528789c5dddf0dbc9d",
+  "logs/v12/Team23_Trader_V12.log": "b651c6e16cbc473f26313fd54356a20601627e72912436a333bd0776ac83dfda",
+  "logs/v12/V12A_Execution.log": "5d7c98dbe681d5f33d5d1e44bf0192eee5d7318072e34eebb4f8cacfba9842c9",
+  "logs/v12/V12B_InventoryExit.log": "52633f202ee5e24c164573f6a3e38f0260bee27f947a1aabfb372dc9b4a115af",
+  "logs/v12/V12C_EfficientCapacity.log": "a51bb81bb43e5ca4add40e369ed1dc0723b8b105dbcdb8401fb817653a8657e6",
+  "logs/v12/V12D_Combined.log": "114ea899917a4822c202eede4a6dcf0385420a9523d93fd6e574fa3aa8f80960",
+  "logs/v12/V12E_FamilyRisk.log": "b651c6e16cbc473f26313fd54356a20601627e72912436a333bd0776ac83dfda"
+}
