@@ -3,7 +3,3 @@ __pycache__/
 *.py[cod]
 tmp/
 output/
-logs/v10/**/*.log
-logs/v10/*.log
-logs/v9/*.log
-logs/v11/*.log
