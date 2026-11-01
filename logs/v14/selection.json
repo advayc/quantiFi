@@ -1,0 +1,5 @@
+{
+  "candidate": "V13 retained",
+  "metrics": "../v13/Team23_Trader_V13.metrics.json",
+  "reason": "Retain V13 unchanged. A loses 19 with unchanged drawdown. B loses 18,419.5 despite lower drawdown. C loses 10,150 with only 81 less drawdown. All retain 26-market coverage and have zero nonempty runtime logs. Neither B nor C improves any daily PnL increment. No tested combination is justified. V14 is an experiment archive, not a promoted strategy version; the single active root file remains V13. No fresh final-source rerun is needed because its bytes are unchanged from the archived baseline and previously verified V13 upload."
+}

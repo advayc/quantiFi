@@ -19,3 +19,7 @@ See [V13 comparison and rubric review](logs/v13/RESULTS.md), [strategy explanati
 ![V13 UTEFA P&L](logs/v13/final_backtest.png)
 
 ![V13 UTEFA positions](logs/v13/positions.png)
+
+## Further execution experiments
+
+[V14 experiments](logs/v14/RESULTS.md) tested deeper book access, inventory-aware taking and PAPER entry timing through UTEFA. All reduced historical PnL, so the active trader remains V13 unchanged. Sources, rejected runs and raw `.log` files are retained in `logs/v14`.

@@ -1,0 +1,26 @@
+logs/v14/candidates/V14A_BookDepth.py check_risk.py
+V14A_BookDepth.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+
+logs/v14/candidates/V14A_BookDepth.py check_exits.py
+PASS: 3,000 concessional exit cases; held-quantity cap and passive pricing
+
+logs/v14/candidates/V14A_BookDepth.py check_v13_models.py
+V14A_BookDepth.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases
+
+logs/v14/candidates/V14B_TakerInventory.py check_risk.py
+V14B_TakerInventory.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+
+logs/v14/candidates/V14B_TakerInventory.py check_exits.py
+PASS: 3,000 concessional exit cases; held-quantity cap and passive pricing
+
+logs/v14/candidates/V14B_TakerInventory.py check_v13_models.py
+V14B_TakerInventory.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases
+
+logs/v14/candidates/V14C_PaperTiming.py check_risk.py
+V14C_PaperTiming.py PASS: 2,000 single-product + 400 portfolio scenarios; gates, memory, overrides
+
+logs/v14/candidates/V14C_PaperTiming.py check_exits.py
+PASS: 3,000 concessional exit cases; held-quantity cap and passive pricing
+
+logs/v14/candidates/V14C_PaperTiming.py check_v13_models.py
+V14C_PaperTiming.py PASS: hedge behavior and 200 convex payoff regimes including strike aliases

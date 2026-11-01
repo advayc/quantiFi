@@ -1,0 +1,164 @@
+[
+  {
+    "day": -2,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 1,
+    "quantity": 153.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -544.0,
+    "mean_markout_per_unit": -3.5555555555555554
+  },
+  {
+    "day": -2,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 10,
+    "quantity": 153.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -427.5,
+    "mean_markout_per_unit": -2.7941176470588234
+  },
+  {
+    "day": -2,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 25,
+    "quantity": 153.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -224.5,
+    "mean_markout_per_unit": -1.4673202614379084
+  },
+  {
+    "day": -2,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 1,
+    "quantity": 25.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -92.0,
+    "mean_markout_per_unit": -3.68
+  },
+  {
+    "day": -2,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 10,
+    "quantity": 25.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -40.0,
+    "mean_markout_per_unit": -1.6
+  },
+  {
+    "day": -2,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 25,
+    "quantity": 25.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -17.0,
+    "mean_markout_per_unit": -0.68
+  },
+  {
+    "day": -1,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 1,
+    "quantity": 229.0,
+    "records": 43.0,
+    "signed_future_mid_minus_fill": -663.0,
+    "mean_markout_per_unit": -2.8951965065502185
+  },
+  {
+    "day": -1,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 10,
+    "quantity": 229.0,
+    "records": 43.0,
+    "signed_future_mid_minus_fill": -523.5,
+    "mean_markout_per_unit": -2.2860262008733625
+  },
+  {
+    "day": -1,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 25,
+    "quantity": 229.0,
+    "records": 43.0,
+    "signed_future_mid_minus_fill": -283.5,
+    "mean_markout_per_unit": -1.237991266375546
+  },
+  {
+    "day": -1,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 1,
+    "quantity": 19.0,
+    "records": 4.0,
+    "signed_future_mid_minus_fill": -30.5,
+    "mean_markout_per_unit": -1.605263157894737
+  },
+  {
+    "day": -1,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 10,
+    "quantity": 19.0,
+    "records": 4.0,
+    "signed_future_mid_minus_fill": -15.5,
+    "mean_markout_per_unit": -0.8157894736842105
+  },
+  {
+    "day": -1,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 25,
+    "quantity": 19.0,
+    "records": 4.0,
+    "signed_future_mid_minus_fill": -5.0,
+    "mean_markout_per_unit": -0.2631578947368421
+  },
+  {
+    "day": 0,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 1,
+    "quantity": 165.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -504.0,
+    "mean_markout_per_unit": -3.0545454545454547
+  },
+  {
+    "day": 0,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 10,
+    "quantity": 165.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -327.5,
+    "mean_markout_per_unit": -1.9848484848484849
+  },
+  {
+    "day": 0,
+    "condition": "chasing_last_move",
+    "horizon_ticks": 25,
+    "quantity": 165.0,
+    "records": 29.0,
+    "signed_future_mid_minus_fill": -274.5,
+    "mean_markout_per_unit": -1.6636363636363636
+  },
+  {
+    "day": 0,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 1,
+    "quantity": 27.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -79.5,
+    "mean_markout_per_unit": -2.9444444444444446
+  },
+  {
+    "day": 0,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 10,
+    "quantity": 27.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -27.0,
+    "mean_markout_per_unit": -1.0
+  },
+  {
+    "day": 0,
+    "condition": "flat_or_against_last_move",
+    "horizon_ticks": 25,
+    "quantity": 27.0,
+    "records": 5.0,
+    "signed_future_mid_minus_fill": -28.5,
+    "mean_markout_per_unit": -1.0555555555555556
+  }
+]

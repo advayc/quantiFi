@@ -1,0 +1,17 @@
+{
+  "prices_day_-1.csv": {
+    "lag1_return_correlation": -0.4901904796584692,
+    "next_return_after_up": -0.6798103607770583,
+    "next_return_after_down": 0.6724650949874114
+  },
+  "prices_day_-2.csv": {
+    "lag1_return_correlation": -0.49576568192566667,
+    "next_return_after_up": -0.6991554439625656,
+    "next_return_after_down": 0.6736975564776395
+  },
+  "prices_day_0.csv": {
+    "lag1_return_correlation": -0.5009763041688508,
+    "next_return_after_up": -0.6896432681242808,
+    "next_return_after_down": 0.684537505752416
+  }
+}

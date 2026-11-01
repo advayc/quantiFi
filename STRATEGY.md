@@ -65,3 +65,7 @@ Reusing the same days for development is not OOS validation. Three positive days
 Lead with one clear idea: adapt valuation to market structure, then constrain execution risk consistently across products. Use an architecture diagram, a strategy-family table, an option interpolation/bounds figure, and a profit/drawdown comparison. Explain the failed JELLY experiment and the accepted capacity tradeoff. Disclose the dependence between option positions and profit concentration. Avoid claiming basket arbitrage, guaranteed hedge fills, or validated OOS profitability.
 
 The final abstract must include **Team 23 and all team members' names at the top of page one**, remain within five pages, and describe the final tested code. Team names have not yet been supplied. A concise explanation with useful figures is stronger than padding to the page limit. The current older abstract is not synchronized with V13 and should not be submitted unchanged.
+
+## V14 execution review: retain V13
+
+Three isolated UTEFA experiments failed to improve the selected strategy: deeper book access returned 123,621.5; inventory-aware taking returned 105,221; PAPER timing gates returned 113,490.5. V13 remains at 123,640.5. Each preserved 26 markets and produced no nonempty runtime logs. The latter two reduced drawdown but sacrificed profit on every supplied day. The short-horizon reversal diagnostic did not translate into better strategy performance. No combination is promoted. Full attribution and raw logs are archived under logs/v14.

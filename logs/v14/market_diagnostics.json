@@ -1,0 +1,278 @@
+{
+  "prices_day_-1.csv": {
+    "PAPER_LANTERNS": {
+      "mean_spread": 4.0038,
+      "ask_volume_below_six": 0.0389,
+      "bid_volume_below_six": 0.0376,
+      "ema_deviation_forward_correlation": {
+        "1": -0.20795718348410336,
+        "10": 0.1012388223095499,
+        "25": 0.456873904113915
+      }
+    },
+    "TOFFEE_CAKE": {
+      "mean_spread": 14.0644,
+      "ask_volume_below_six": 0.0388,
+      "bid_volume_below_six": 0.0398,
+      "ema_deviation_forward_correlation": {
+        "1": -0.09388527244756542,
+        "10": -0.08763964456348504,
+        "25": -0.11150364736872327
+      }
+    },
+    "TELLURIUM": {
+      "mean_spread": 9.5268,
+      "ask_volume_below_six": 0.1069,
+      "bid_volume_below_six": 0.0653,
+      "ema_deviation_forward_correlation": {
+        "1": -0.004118520260848463,
+        "10": -0.007559515169011969,
+        "25": -0.011083929013778665
+      }
+    },
+    "JELLY": {
+      "mean_spread": 11.0046,
+      "ask_volume_below_six": 0.0524,
+      "bid_volume_below_six": 0.0501,
+      "ema_deviation_forward_correlation": {
+        "1": 0.007508041109062914,
+        "10": 0.047339200120160706,
+        "25": 0.0889141776829101
+      }
+    },
+    "PEANUT_BUTTER": {
+      "mean_spread": 6.0063,
+      "ask_volume_below_six": 0.0499,
+      "bid_volume_below_six": 0.0478,
+      "ema_deviation_forward_correlation": {
+        "1": 0.0049839971218294124,
+        "10": 0.025124827625428947,
+        "25": 0.042680960454121744
+      }
+    },
+    "FRUIT_BASKET": {
+      "mean_spread": 5.9989,
+      "ask_volume_below_six": 0.0601,
+      "bid_volume_below_six": 0.0619,
+      "ema_deviation_forward_correlation": {
+        "1": -0.01869080935243155,
+        "10": -0.04383074350168106,
+        "25": -0.05412010310690418
+      }
+    },
+    "DRAGONFRUIT": {
+      "mean_spread": 4.004,
+      "ask_volume_below_six": 0.0607,
+      "bid_volume_below_six": 0.0685,
+      "ema_deviation_forward_correlation": {
+        "1": -0.0011133562384507483,
+        "10": 0.032766281142735915,
+        "25": 0.03553507854135953
+      }
+    },
+    "GRANADILLA": {
+      "mean_spread": 4.0049,
+      "ask_volume_below_six": 0.0592,
+      "bid_volume_below_six": 0.0592,
+      "ema_deviation_forward_correlation": {
+        "1": -0.015888790116549537,
+        "10": -0.004351054246323866,
+        "25": 0.0034802071004879313
+      }
+    },
+    "MANGOSTEEN": {
+      "mean_spread": 4.0054,
+      "ask_volume_below_six": 0.0595,
+      "bid_volume_below_six": 0.0605,
+      "ema_deviation_forward_correlation": {
+        "1": -0.01745693624407502,
+        "10": -0.03507590610625038,
+        "25": -0.06814754801951692
+      }
+    }
+  },
+  "prices_day_-2.csv": {
+    "PAPER_LANTERNS": {
+      "mean_spread": 3.997,
+      "ask_volume_below_six": 0.0373,
+      "bid_volume_below_six": 0.0396,
+      "ema_deviation_forward_correlation": {
+        "1": -0.22055935111464742,
+        "10": 0.07759775630073085,
+        "25": 0.4203386806204904
+      }
+    },
+    "TOFFEE_CAKE": {
+      "mean_spread": 14.0907,
+      "ask_volume_below_six": 0.0361,
+      "bid_volume_below_six": 0.0399,
+      "ema_deviation_forward_correlation": {
+        "1": -0.0785177251572796,
+        "10": -0.05613614042910587,
+        "25": -0.0814300415401611
+      }
+    },
+    "TELLURIUM": {
+      "mean_spread": 9.711,
+      "ask_volume_below_six": 0.0661,
+      "bid_volume_below_six": 0.1454,
+      "ema_deviation_forward_correlation": {
+        "1": 0.048241608414409956,
+        "10": 0.13901115668777117,
+        "25": 0.177174043125677
+      }
+    },
+    "JELLY": {
+      "mean_spread": 11.0195,
+      "ask_volume_below_six": 0.0495,
+      "bid_volume_below_six": 0.0464,
+      "ema_deviation_forward_correlation": {
+        "1": -0.00775797355332698,
+        "10": -0.009939574212879282,
+        "25": 0.004476920375700132
+      }
+    },
+    "PEANUT_BUTTER": {
+      "mean_spread": 5.9916,
+      "ask_volume_below_six": 0.045,
+      "bid_volume_below_six": 0.0469,
+      "ema_deviation_forward_correlation": {
+        "1": -0.004281678508302805,
+        "10": -0.032441424361819064,
+        "25": -0.06717238647626478
+      }
+    },
+    "FRUIT_BASKET": {
+      "mean_spread": 6.0095,
+      "ask_volume_below_six": 0.0627,
+      "bid_volume_below_six": 0.064,
+      "ema_deviation_forward_correlation": {
+        "1": 0.010232298021959773,
+        "10": 0.02404021704721458,
+        "25": 0.06679835012106473
+      }
+    },
+    "DRAGONFRUIT": {
+      "mean_spread": 4.0074,
+      "ask_volume_below_six": 0.0607,
+      "bid_volume_below_six": 0.0641,
+      "ema_deviation_forward_correlation": {
+        "1": -0.00567299849248923,
+        "10": 0.007832773795532946,
+        "25": 0.02178220037572015
+      }
+    },
+    "GRANADILLA": {
+      "mean_spread": 3.9918,
+      "ask_volume_below_six": 0.0608,
+      "bid_volume_below_six": 0.0603,
+      "ema_deviation_forward_correlation": {
+        "1": -0.010194194871671343,
+        "10": 0.00807451216197859,
+        "25": 0.04134788169918477
+      }
+    },
+    "MANGOSTEEN": {
+      "mean_spread": 3.9964,
+      "ask_volume_below_six": 0.0661,
+      "bid_volume_below_six": 0.0597,
+      "ema_deviation_forward_correlation": {
+        "1": -0.000753999176270292,
+        "10": 0.019048046298091415,
+        "25": 0.017294979074006952
+      }
+    }
+  },
+  "prices_day_0.csv": {
+    "PAPER_LANTERNS": {
+      "mean_spread": 4.0,
+      "ask_volume_below_six": 0.0408,
+      "bid_volume_below_six": 0.0387,
+      "ema_deviation_forward_correlation": {
+        "1": -0.22868373849329363,
+        "10": 0.06130940095267516,
+        "25": 0.40802195951443915
+      }
+    },
+    "TOFFEE_CAKE": {
+      "mean_spread": 14.0046,
+      "ask_volume_below_six": 0.0359,
+      "bid_volume_below_six": 0.0388,
+      "ema_deviation_forward_correlation": {
+        "1": -0.07764150437371443,
+        "10": -0.03785654904052381,
+        "25": -0.053228521612110814
+      }
+    },
+    "TELLURIUM": {
+      "mean_spread": 9.921,
+      "ask_volume_below_six": 0.1143,
+      "bid_volume_below_six": 0.0998,
+      "ema_deviation_forward_correlation": {
+        "1": -0.002180203557518369,
+        "10": -0.001929021747838671,
+        "25": 0.009341181926585429
+      }
+    },
+    "JELLY": {
+      "mean_spread": 11.0167,
+      "ask_volume_below_six": 0.0484,
+      "bid_volume_below_six": 0.0517,
+      "ema_deviation_forward_correlation": {
+        "1": 0.01662909155972585,
+        "10": 0.07802312986136802,
+        "25": 0.14997345561982148
+      }
+    },
+    "PEANUT_BUTTER": {
+      "mean_spread": 6.0082,
+      "ask_volume_below_six": 0.0524,
+      "bid_volume_below_six": 0.0475,
+      "ema_deviation_forward_correlation": {
+        "1": 0.0028783565544475568,
+        "10": 0.01802797440308436,
+        "25": 0.0372102300161116
+      }
+    },
+    "FRUIT_BASKET": {
+      "mean_spread": 5.9952,
+      "ask_volume_below_six": 0.0588,
+      "bid_volume_below_six": 0.0649,
+      "ema_deviation_forward_correlation": {
+        "1": 0.0008958550038540798,
+        "10": 0.0004477062672942357,
+        "25": 0.014466131536090391
+      }
+    },
+    "DRAGONFRUIT": {
+      "mean_spread": 4.0123,
+      "ask_volume_below_six": 0.0602,
+      "bid_volume_below_six": 0.0622,
+      "ema_deviation_forward_correlation": {
+        "1": 0.007346142024635125,
+        "10": 0.041119206430545716,
+        "25": 0.07792743250081818
+      }
+    },
+    "GRANADILLA": {
+      "mean_spread": 4.003,
+      "ask_volume_below_six": 0.0612,
+      "bid_volume_below_six": 0.0653,
+      "ema_deviation_forward_correlation": {
+        "1": -0.007422763995619409,
+        "10": 0.006625766810483186,
+        "25": 0.002548133294965671
+      }
+    },
+    "MANGOSTEEN": {
+      "mean_spread": 4.0057,
+      "ask_volume_below_six": 0.0643,
+      "bid_volume_below_six": 0.0614,
+      "ema_deviation_forward_correlation": {
+        "1": -0.019068016055886844,
+        "10": -0.033961425150001286,
+        "25": -0.029975582574288867
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "source": "logs/v14/candidates/V14A_BookDepth.py",
+    "source_sha256": "5cefdd2c71daaac42745f86103771bc7851f0a0607fa279cb95b13ef71ec23a9",
+    "website": "https://www.utefa.com/quantifi",
+    "downloaded_file": "/Users/AdvayChandorkar/Downloads/quantifi-backtest (25).log",
+    "archived_log": "logs/v14/V14A_BookDepth.log",
+    "log_sha256": "ccb143ae05903037d385f0db66c600712104f57d4ae3b72de6522c52948e587a"
+  },
+  {
+    "source": "logs/v14/candidates/V14B_TakerInventory.py",
+    "source_sha256": "7004ca85bf19f23aa6fe80f581b4833d115df2634fd7282a57279abd4eed3749",
+    "website": "https://www.utefa.com/quantifi",
+    "downloaded_file": "/Users/AdvayChandorkar/Downloads/quantifi-backtest (26).log",
+    "archived_log": "logs/v14/V14B_TakerInventory.log",
+    "log_sha256": "204e52d4a225365cb56aa0093557a9a4ee273d050709b110becfc0aecb457486"
+  },
+  {
+    "source": "logs/v14/candidates/V14C_PaperTiming.py",
+    "source_sha256": "b59b82c01cca0096f2a5095592eb2ba973c400b1c0adc8b79d5cf4f922b8159b",
+    "website": "https://www.utefa.com/quantifi",
+    "downloaded_file": "/Users/AdvayChandorkar/Downloads/quantifi-backtest (27).log",
+    "archived_log": "logs/v14/V14C_PaperTiming.log",
+    "log_sha256": "f9ca9a856ad79302e12b97688e42e3554b10b856da1ab151a43af8692779b63a"
+  }
+]
